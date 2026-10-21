@@ -46,6 +46,13 @@ public partial class OverlayWindow : Window
 
     public void SetScale(double s) { Scale.ScaleX = Scale.ScaleY = s; }
 
+    /// <summary>Transparência do fundo em porcentagem (o texto permanece totalmente legível).</summary>
+    public void SetTransparency(double percent)
+    {
+        byte alpha = (byte)Math.Round(255 * (1 - Math.Clamp(percent, 0, 100) / 100));
+        Box.Background = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
+    }
+
     public void Reposition() => KeepOnTop();
 
     /// <summary>
@@ -62,7 +69,7 @@ public partial class OverlayWindow : Window
 
         // Tudo em pixels do mesmo sistema de coordenadas (GetMonitorInfo e GetWindowRect), sem conversão de DPI.
         int w = wr.Right - wr.Left, h = wr.Bottom - wr.Top;
-        int m = (int)Math.Round(12 * VisualTreeHelper.GetDpi(this).DpiScaleX);
+        int m = (int)Math.Round(4 * VisualTreeHelper.GetDpi(this).DpiScaleX);
         var r = mi.rcMonitor;
         int x = Corner.EndsWith("R") ? r.Right - w - m : r.Left + m;
         int y = Corner.StartsWith("B") ? r.Bottom - h - m : r.Top + m;

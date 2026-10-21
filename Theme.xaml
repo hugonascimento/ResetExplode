@@ -560,13 +560,13 @@
         </Setter>
     </Style>
     <Style x:Key="SliderThumb" TargetType="Thumb">
-        <Setter Property="Width" Value="12"/>
-        <Setter Property="Height" Value="20"/>
+        <Setter Property="Width" Value="14"/>
+        <Setter Property="Height" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <Border Background="{DynamicResource Fg}"/>
+                    <Border Background="{DynamicResource Fg}" CornerRadius="7"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

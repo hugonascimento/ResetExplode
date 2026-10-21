@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private readonly ICollectionView _view;
     private string? _category;   // filtro por chip (null = todos)
     private string _search = ""; // filtro por texto
+    private readonly TrayIcon _trayIcon;
 
     // Placa de vídeo
     private List<GpuInfo> _gpus = new();
@@ -80,6 +81,8 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _trayIcon = new TrayIcon(RestoreFromTray, Close);
+
         ThemeManager.Apply(_settings.LightTheme);
         UpdateThemeButton();
         ShowPage("PageDash");
@@ -121,6 +124,13 @@ public partial class MainWindow : Window
 
         StateChanged += (_, _) =>
         {
+            if (WindowState == WindowState.Minimized)
+            {
+                _trayIcon.Show();
+                Hide();
+                return;
+            }
+
             // Sem borda nativa, a janela maximizada vaza ~7 px para fora da tela.
             bool max = WindowState == WindowState.Maximized;
             Root.Margin = max ? new Thickness(7) : new Thickness(0);
@@ -128,6 +138,9 @@ public partial class MainWindow : Window
         };
         Closed += (_, _) =>
         {
+            _settings.OverlayEnabled = ChkOverlay.IsChecked == true;
+            _settings.Save();
+            _trayIcon.Dispose();
             _timer.Stop(); _overlayTimer?.Stop();
             _stress.Stop(); _burn.Stop(); _benchCts?.Cancel();
             _overlay?.Close();
@@ -139,6 +152,27 @@ public partial class MainWindow : Window
             _monitor.Dispose();
         };
     }
+
+    private void RestoreFromTray()
+    {
+        _trayIcon.Hide();
+        Show();
+        WindowState = WindowState.Normal;
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        ShowWindow(hwnd, SwRestore);
+        BringWindowToTop(hwnd);
+        SetForegroundWindow(hwnd);
+        Activate();
+    }
+
+    private const int SwRestore = 9;
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int command);
+    [DllImport("user32.dll")]
+    private static extern bool BringWindowToTop(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
 
     /// <summary>Coletas lentas da abertura, em paralelo e fora da thread da janela; cada parte preenche a tela quando fica pronta.</summary>
     private async Task LoadHardwareAsync()
@@ -222,10 +256,7 @@ public partial class MainWindow : Window
                                                @"Microsoft\WindowsApps\winget.exe");
         if (!System.IO.File.Exists(winget))
         {
-            MessageBox.Show(why + "\n\nO instalador de pacotes do Windows (winget) não foi encontrado neste PC. " +
-                            "Atualize o \"Instalador de Aplicativo\" pela Microsoft Store e use o botão de novo, " +
-                            "ou instale o PawnIO (autor: namazso) manualmente.",
-                            "RESET EXPLODE", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowPawnIOMissingWingetDialog(why);
             return;
         }
 
@@ -237,6 +268,76 @@ public partial class MainWindow : Window
             "/k winget install --id namazso.PawnIO -e --accept-package-agreements --accept-source-agreements" +
             " && echo. && echo Pronto! Feche esta janela e reabra o RESET EXPLODE.")
         { UseShellExecute = true });
+    }
+
+    private void ShowPawnIOMissingWingetDialog(string why)
+    {
+        var dialog = new Window
+        {
+            Title = "RESET EXPLODE",
+            Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.NoResize,
+            SizeToContent = SizeToContent.WidthAndHeight,
+            MinWidth = 480,
+            MaxWidth = 620,
+            ShowInTaskbar = false,
+            Background = (Brush)FindResource("Panel"),
+            Foreground = (Brush)FindResource("Fg"),
+            FontFamily = FontFamily,
+            FontSize = 13,
+        };
+
+        var content = new StackPanel { Margin = new Thickness(24) };
+        content.Children.Add(new TextBlock
+        {
+            Text = why + "\n\nO winget não foi encontrado neste computador. Você pode atualizar o Instalador de Aplicativo pela Microsoft Store ou baixar o PawnIO manualmente pela página oficial.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = (Brush)FindResource("Fg"),
+            Margin = new Thickness(0, 0, 0, 22),
+        });
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        var install = new Button
+        {
+            Content = "Instalar manualmente",
+            Style = (Style)FindResource("PrimaryButton"),
+            Padding = new Thickness(16, 8, 16, 8),
+            Margin = new Thickness(0, 0, 8, 0),
+        };
+        install.Click += (_, _) =>
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
+                    "https://github.com/namazso/PawnIO.Setup/releases") { UseShellExecute = true });
+                dialog.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(dialog, $"Não foi possível abrir o navegador.\n\n{ex.Message}",
+                                "RESET EXPLODE", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        };
+        buttons.Children.Add(install);
+
+        var ok = new Button
+        {
+            Content = "OK",
+            Style = (Style)FindResource("OutlineButton"),
+            Padding = new Thickness(18, 8, 18, 8),
+            IsDefault = true,
+            IsCancel = true,
+        };
+        ok.Click += (_, _) => dialog.Close();
+        buttons.Children.Add(ok);
+        content.Children.Add(buttons);
+        dialog.Content = content;
+        dialog.ShowDialog();
     }
 
     // ---------------- Janela / navegação ----------------
@@ -581,9 +682,12 @@ public partial class MainWindow : Window
             rb.IsChecked = (string)rb.Tag == _settings.OverlayCorner;
         foreach (var rb in OvScalePanel.Children.OfType<RadioButton>())
             rb.IsChecked = Math.Abs(double.Parse((string)rb.Tag, CultureInfo.InvariantCulture) - _settings.OverlayScale) < 0.01;
+        OvTransparencySlider.Value = Math.Clamp(_settings.OverlayTransparency, 0, 100);
+        OvTransparencyValue.Text = $"{OvTransparencySlider.Value:0}%";
         BuildOverlayPicker();
         _overlayReady = true;
         UpdateOverlayStatus(null);
+        if (_settings.OverlayEnabled) ChkOverlay.IsChecked = true;
     }
 
     /// <summary>Posição do marcador: escala logarítmica da razão GPU/CPU (0,4× … 2,5×), centro = equilibrado.</summary>
@@ -1281,7 +1385,10 @@ public partial class MainWindow : Window
     {
         base.OnSourceInitialized(e);
         var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
-        System.Windows.Interop.HwndSource.FromHwnd(hwnd)?.AddHook(HotkeyHook);
+        var source = System.Windows.Interop.HwndSource.FromHwnd(hwnd);
+        source?.AddHook(HotkeyHook);
+        source?.AddHook(TrayHook);
+        _trayIcon.Attach(hwnd);
         // Ctrl + Shift + O, sem repetição ao segurar
         RegisterHotKey(hwnd, HotkeyId, 0x0002 | 0x0004 | 0x4000, 0x4F);
     }
@@ -1298,8 +1405,20 @@ public partial class MainWindow : Window
         return IntPtr.Zero;
     }
 
+    private IntPtr TrayHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == _trayIcon.CallbackMessage)
+        {
+            _trayIcon.HandleCallback(lParam.ToInt32());
+            handled = true;
+        }
+        return IntPtr.Zero;
+    }
+
     private void ChkOverlay_Changed(object sender, RoutedEventArgs e)
     {
+        _settings.OverlayEnabled = ChkOverlay.IsChecked == true;
+        _settings.Save();
         if (ChkOverlay.IsChecked == true)
         {
             _overlay ??= new OverlayWindow();
@@ -1319,9 +1438,20 @@ public partial class MainWindow : Window
 
     private void OvOption_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_overlayReady) return;
+        if (!_overlayReady || _applyingOverlayPreset) return;
         _settings.OverlayCorner = CheckedTag(OvCornerPanel) ?? "TL";
         _settings.OverlayScale = double.Parse(CheckedTag(OvScalePanel) ?? "1", CultureInfo.InvariantCulture);
+        _settings.Save();
+        ApplyOverlayOptions();
+    }
+
+    private void OvTransparency_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (OvTransparencyValue == null || OvTransparencySlider == null) return;
+        double value = Math.Round(OvTransparencySlider.Value);
+        OvTransparencyValue.Text = $"{value:0}%";
+        if (!_overlayReady) return;
+        _settings.OverlayTransparency = value;
         _settings.Save();
         ApplyOverlayOptions();
     }
@@ -1331,6 +1461,7 @@ public partial class MainWindow : Window
         if (_overlay == null) return;
         _overlay.Corner = _settings.OverlayCorner;
         _overlay.SetScale(_settings.OverlayScale);
+        _overlay.SetTransparency(_settings.OverlayTransparency);
         _overlay.Reposition();
     }
 

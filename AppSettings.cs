@@ -71,8 +71,10 @@ public sealed class AppSettings
     public bool LightTheme { get; set; }
 
     // Overlay
+    public bool OverlayEnabled { get; set; }
     public string OverlayCorner { get; set; } = "TL";
     public double OverlayScale { get; set; } = 1.0;
+    public double OverlayTransparency { get; set; } = 22.0;
     /// <summary>Itens escolhidos para o overlay (chaves de OverlayMetrics); null = padrão.</summary>
     public List<string>? OverlayItems { get; set; }
 

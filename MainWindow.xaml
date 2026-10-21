@@ -171,7 +171,7 @@
                                 <TextBlock x:Name="SideStress" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Text="parado" FontFamily="{StaticResource Mono}" FontSize="12" Margin="0,3"/>
                             </Grid>
                         </Border>
-                        <TextBlock x:Name="SideVersion" Text="v0.16" Foreground="{DynamicResource Faint}" FontSize="11" Margin="4,10,0,0"/>
+                        <TextBlock x:Name="SideVersion" Text="v0.17" Foreground="{DynamicResource Faint}" FontSize="11" Margin="4,10,0,0"/>
                     </StackPanel>
 
                     <!-- Navegação por categorias -->
@@ -183,7 +183,7 @@
                                     <TextBlock Text="Visão geral" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </RadioButton>
-                            <ToggleButton x:Name="GrpExplode" Style="{StaticResource NavGroup}" Content="RESET EXPLODE"/>
+                            <ToggleButton x:Name="GrpExplode" Style="{StaticResource NavGroup}" Content="SISTEMA"/>
                             <StackPanel x:Name="GrpExplodeItems" Margin="10,0,0,4" Visibility="{Binding IsChecked, ElementName=GrpExplode, Converter={StaticResource BoolVis}}">
                             <RadioButton x:Name="NavSystem" Style="{StaticResource NavItem}" Tag="PageSystem" Checked="Nav_Checked">
                                 <StackPanel Orientation="Horizontal">
@@ -222,7 +222,7 @@
                                 </StackPanel>
                             </RadioButton>
                             </StackPanel>
-                            <ToggleButton x:Name="GrpGames" Style="{StaticResource NavGroup}" Content="RESET JOGOS"/>
+                            <ToggleButton x:Name="GrpGames" Style="{StaticResource NavGroup}" Content="JOGOS"/>
                             <StackPanel x:Name="GrpGamesItems" Margin="10,0,0,4" Visibility="{Binding IsChecked, ElementName=GrpGames, Converter={StaticResource BoolVis}}">
                             <RadioButton x:Name="NavLauncher" Style="{StaticResource NavItem}" Tag="PageLauncher" Checked="Nav_Checked">
                                 <StackPanel Orientation="Horizontal">
@@ -249,7 +249,7 @@
                                 </StackPanel>
                             </RadioButton>
                             </StackPanel>
-                            <ToggleButton x:Name="GrpPerf" Style="{StaticResource NavGroup}" Content="RESET DESEMPENHO"/>
+                            <ToggleButton x:Name="GrpPerf" Style="{StaticResource NavGroup}" Content="TESTES &amp; OC"/>
                             <StackPanel x:Name="GrpPerfItems" Margin="10,0,0,4" Visibility="{Binding IsChecked, ElementName=GrpPerf, Converter={StaticResource BoolVis}}">
                             <RadioButton x:Name="NavBench" Style="{StaticResource NavItem}" Tag="PageBench" Checked="Nav_Checked">
                                 <StackPanel Orientation="Horizontal">
@@ -270,7 +270,7 @@
                                 </StackPanel>
                             </RadioButton>
                             </StackPanel>
-                            <ToggleButton x:Name="GrpTools" Style="{StaticResource NavGroup}" Content="RESET FERRAMENTAS"/>
+                            <ToggleButton x:Name="GrpTools" Style="{StaticResource NavGroup}" Content="FERRAMENTAS"/>
                             <StackPanel x:Name="GrpToolsItems" Margin="10,0,0,4" Visibility="{Binding IsChecked, ElementName=GrpTools, Converter={StaticResource BoolVis}}">
                             <RadioButton x:Name="NavOptimize" Style="{StaticResource NavItem}" Tag="PageOptimize" Checked="Nav_Checked">
                                 <StackPanel Orientation="Horizontal">
@@ -303,7 +303,7 @@
                                 </StackPanel>
                             </RadioButton>
                             </StackPanel>
-                            <ToggleButton x:Name="GrpMaker" Style="{StaticResource NavGroup}" Content="RESET MAKER"/>
+                            <ToggleButton x:Name="GrpMaker" Style="{StaticResource NavGroup}" Content="MAKER"/>
                             <StackPanel x:Name="GrpMakerItems" Margin="10,0,0,4" Visibility="{Binding IsChecked, ElementName=GrpMaker, Converter={StaticResource BoolVis}}">
                             <RadioButton x:Name="NavMakerPorts" Style="{StaticResource NavItem}" Tag="PageMakerPorts" Checked="Nav_Checked">
                                 <StackPanel Orientation="Horizontal">
@@ -1529,6 +1529,18 @@
                         </Border>
 
                         <Border Style="{StaticResource CardBorder}" Margin="0,0,0,14">
+                            <StackPanel>
+                                <Grid>
+                                    <TextBlock Text="TRANSPARÊNCIA" Style="{StaticResource Label}"/>
+                                    <TextBlock x:Name="OvTransparencyValue" Text="22%" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider x:Name="OvTransparencySlider" Minimum="0" Maximum="100" Value="22" TickFrequency="1"
+                                        IsSnapToTickEnabled="False" ValueChanged="OvTransparency_Changed"
+                                        ToolTip="Ajusta a transparência do fundo do overlay em tempo real"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,14">
                             <WrapPanel>
                                 <StackPanel Margin="0,0,36,0">
                                     <TextBlock Text="POSIÇÃO" Style="{StaticResource Label}"/>
@@ -1542,9 +1554,10 @@
                                 <StackPanel>
                                     <TextBlock Text="TAMANHO" Style="{StaticResource Label}"/>
                                     <StackPanel x:Name="OvScalePanel" Orientation="Horizontal">
-                                        <RadioButton Style="{StaticResource Chip}" GroupName="OvScale" Content="Pequeno" Tag="0.85" Margin="0,0,6,0" Checked="OvOption_Changed"/>
-                                        <RadioButton Style="{StaticResource Chip}" GroupName="OvScale" Content="Médio" Tag="1" Margin="0,0,6,0" Checked="OvOption_Changed"/>
-                                        <RadioButton Style="{StaticResource Chip}" GroupName="OvScale" Content="Grande" Tag="1.3" Margin="0" Checked="OvOption_Changed"/>
+                                        <RadioButton Style="{StaticResource Chip}" GroupName="OvScale" Content="Pequeno" Tag="0.75" Margin="0,0,6,0" Checked="OvOption_Changed"/>
+                                        <RadioButton Style="{StaticResource Chip}" GroupName="OvScale" Content="Médio" Tag="0.85" Margin="0,0,6,0" Checked="OvOption_Changed"/>
+                                        <RadioButton Style="{StaticResource Chip}" GroupName="OvScale" Content="Grande" Tag="1" Margin="0,0,6,0" Checked="OvOption_Changed"/>
+                                        <RadioButton Style="{StaticResource Chip}" GroupName="OvScale" Content="Gigante" Tag="1.3" Margin="0" Checked="OvOption_Changed"/>
                                     </StackPanel>
                                 </StackPanel>
                             </WrapPanel>

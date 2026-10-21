@@ -8,6 +8,7 @@ namespace ResetExplode;
 public partial class MainWindow
 {
     private HashSet<string>? _ovShow;
+    private bool _applyingOverlayPreset;
     private HashSet<string> OvShow => _ovShow ??= _settings.OverlayItems is { } l ? l.ToHashSet() : OverlayMetrics.Defaults();
 
     /// <summary>Cria as caixas de seleção da aba Overlay, agrupadas por componente.</summary>
@@ -44,12 +45,32 @@ public partial class MainWindow
 
     private void OvPreset_Click(object sender, RoutedEventArgs e)
     {
-        var keys = (string)((FrameworkElement)sender).Tag switch
+        var preset = (string)((FrameworkElement)sender).Tag;
+        var keys = preset switch
         {
             "all" => OverlayMetrics.All.Select(m => m.Key).ToHashSet(),
             "min" => new HashSet<string> { "fps", "frametime", "low1" },
             _ => OverlayMetrics.Defaults(),
         };
+
+        if (preset == "default")
+        {
+            _applyingOverlayPreset = true;
+            try
+            {
+                foreach (var rb in OvCornerPanel.Children.OfType<RadioButton>())
+                    rb.IsChecked = (string)rb.Tag == "TR";
+                foreach (var rb in OvScalePanel.Children.OfType<RadioButton>())
+                    rb.IsChecked = Math.Abs(double.Parse((string)rb.Tag, System.Globalization.CultureInfo.InvariantCulture) - 0.75) < 0.01;
+            }
+            finally { _applyingOverlayPreset = false; }
+
+            _settings.OverlayCorner = "TR";
+            _settings.OverlayScale = 0.75;
+            _settings.Save();
+            ApplyOverlayOptions();
+        }
+
         _ovShow = keys;
         SaveOverlayItems();
         BuildOverlayPicker();

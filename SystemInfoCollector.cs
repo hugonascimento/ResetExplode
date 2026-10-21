@@ -252,11 +252,31 @@ public static class SystemInfoCollector
 
     private static void CollectGpu(InfoNode n)
     {
+        // AdapterRAM do Win32_VideoController é uint32 e satura em ~4 GiB.
+        // DXGI expõe DedicatedVideoMemory com largura nativa (64 bits) e funciona
+        // com adaptadores de qualquer fabricante.
+        var adapters = Dxgi.Enumerate();
         foreach (var g in Query("SELECT * FROM Win32_VideoController"))
         {
             var gpu = n.Add(S(g, "Name"));
             gpu.Add("Versão do driver", S(g, "DriverVersion"));
-            gpu.Add("Memória (WMI, limitada a 4 GB)", Bytes(g["AdapterRAM"]));
+            string name = S(g, "Name");
+            var adapter = adapters.FirstOrDefault(a =>
+                string.Equals(a.Description.Trim(), name, StringComparison.OrdinalIgnoreCase) ||
+                a.Description.Contains(name, StringComparison.OrdinalIgnoreCase) ||
+                name.Contains(a.Description, StringComparison.OrdinalIgnoreCase));
+            if (adapter?.DedicatedVideo > 0)
+                gpu.Add("Memória dedicada", Bytes(adapter.DedicatedVideo));
+            else
+            {
+                // Fallback apenas para valores que cabem em 32 bits e não atingiram
+                // o teto típico da propriedade WMI; não rotular um valor truncado como real.
+                ulong? wmiBytes = g["AdapterRAM"] is null ? null : Convert.ToUInt64(g["AdapterRAM"]);
+                if (wmiBytes is > 0 and < uint.MaxValue)
+                    gpu.Add("Memória dedicada (WMI)", Bytes(wmiBytes.Value));
+                else
+                    gpu.Add("Memória dedicada", "Não foi possível determinar pelo DXGI");
+            }
             gpu.Add("Resolução atual", $"{S(g, "CurrentHorizontalResolution")}x{S(g, "CurrentVerticalResolution")} @ {S(g, "CurrentRefreshRate")} Hz");
         }
     }
