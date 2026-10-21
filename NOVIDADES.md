@@ -13,7 +13,8 @@
 - A quantidade de memória de vídeo agora é detectada de uma forma que permite mostrar corretamente placas com mais de 4 GB, sem depender de uma marca específica.
 
 **Instalação do PawnIO mais simples**
-- Se o instalador do Windows não estiver disponível, o aviso do PawnIO agora oferece o botão **INSTALAR MANUALMENTE**, que abre a página oficial de downloads no GitHub.
+- Se o PawnIO estiver ausente, o RESET EXPLODE pode tentar preparar o instalador de aplicativos do Windows e instalar o driver com sua autorização.
+- Se a instalação automática não funcionar, o aviso oferece **INSTALAR MANUALMENTE** e abre a página oficial de downloads no GitHub.
 
 **Menu mais direto**
 - As categorias da navegação foram simplificadas para **Sistema**, **Jogos**, **Testes & OC**, **Ferramentas** e **Maker**.
